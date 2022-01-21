@@ -1,5 +1,9 @@
 package compression;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.MathContext;
 import java.util.HashSet;
 import java.math.BigDecimal;
@@ -10,6 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import ch.obermuhlner.math.big.*;
 public class Testing {
@@ -71,38 +76,46 @@ public class Testing {
     static class Task implements Runnable {
         int a=0;
         int pow=0;
-        int loclargestsize;
+        static int loclargestsize;
 
         public Task(int a, int power, int largestsize){
             this.a=a;
             pow=power;
             loclargestsize = largestsize;
         }
-        public static void main(String[] args) throws ArithmeticException {
+        public static void main(String[] args) throws IOException {
             int sintmp;
             int nsintmp;
             int costmp;
             int ncostmp;
             HashSet<Integer> nums= new HashSet<>();
             HashMap<Integer, Integer> map = new HashMap<>();
-            int largestsize=0;
+            HashMap<Integer, Integer> dmap = new HashMap<>();
+            File Logs = new File("Logs.txt");
+            Logs.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(Logs, true));
+            for(int i=0;i<256;i++){
+                dmap.put(i,0);
+            }
+            int largestsize=253;
             boolean first=true;
+            final BigDecimal MIN = new BigDecimal("0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
             for(float a = 1.0f; a < 4; a=Math.nextUp(a)) {
                 BigDecimal num1 = BigDecimal.ONE;
                 BigDecimal num2 = BigDecimal.ONE;
                 BigDecimal b = BigDecimal.ZERO;
-                //BigDecimal addto = DefaultBigDecimalMath.divide(BigDecimal.ONE,BigDecimal.valueOf(Double.MAX_VALUE));
-                BigDecimal addto = new BigDecimal("0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
-                //BigDecimal addto = BigDecimal.valueOf(Double.MIN_VALUE);
-                b=b.add(addto);
+                //BigDecimal MIN = DefaultBigDecimalMath.divide(BigDecimal.ONE,BigDecimal.valueOf(Double.MAX_VALUE));
+                //BigDecimal MIN = BigDecimal.valueOf(Double.MIN_VALUE);
+                b=b.add(MIN);
 
-                for ( ; b.compareTo(BigDecimal.valueOf(4))<=0; b=b.add(addto)) {
+                for ( ; b.compareTo(BigDecimal.valueOf(4))<=0; b=b.add(MIN)) {
                     if(first){
                         first=false;
-                        b=new BigDecimal("0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000148");
+                        b=new BigDecimal("0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000152684");
+                        b=b.add(MIN);
                     }
                     nums.clear();
-                    map.clear();
+                    map= new HashMap<>(dmap);
                     for (int i = 1; i <= (1 << 8); i += 1) {
                         sintmp = 0;
                         nsintmp = 0;
@@ -140,17 +153,25 @@ public class Testing {
                         nums.add(ncostmp/2);
                         map.put(ncostmp/2,map.getOrDefault(ncostmp/2,0)+1);
                     }
-                    if (nums.size() > largestsize) {
+                    HashMap<Integer, Integer> finalMap = map;
+                    if (nums.size() >= largestsize) {
                         largestsize = nums.size();
                         System.out.println("set: " + nums.toString());
-                        map.forEach((key,value)->{
-                            System.out.println(key+" has been found "+value+" times");
-                        });
+                        map.forEach((key,value)-> System.out.println(key+" has been found "+value+" times"));
                         System.out.println("largest size: " + largestsize);
                         System.out.println("largest a:" + new BigDecimal(a).toPlainString());
                         System.out.println("largest b:" + b.toPlainString());
+                        writer.append("Latest LARGEST b: ").append(b.toPlainString()).append(" with a hashmap of: ").append(map.keySet().stream()
+                                .map(key -> key + "=" + finalMap.get(key))
+                                .collect(Collectors.joining(", ", "{", "}")));
                     }
-
+                    else{
+                        writer.append("Latest b: ").append(b.toPlainString()).append(" with a hashmap of: ").append(map.keySet().stream()
+                                .map(key -> key + "=" + finalMap.get(key))
+                                .collect(Collectors.joining(", ", "{", "}")));
+                    }
+                    writer.newLine();
+                    writer.flush();
                 }
             }
         }
